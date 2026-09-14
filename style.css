@@ -1,0 +1,306 @@
+/*
+  マネタスクの公開ページ（サポート／プライバシーポリシー）共通。
+  色はアプリの theme.tsx から取っている（地 #0E0D13・メインカラーはマゼンタ）。
+  外部のフォントや解析は読み込まない ── 「第三者に渡さない」と書いたページが、
+  開いた瞬間に閲覧者の情報を外へ送っていたら本文が嘘になる。
+*/
+
+:root {
+  --ground: #0E0D13;
+  --panel: #191822;
+  --ink: #EDECF2;
+  --ink-2: #9B98AB;
+  --rule: #2A2836;
+  --track: #2A2836;
+  --accent: #E949AE;
+  --glow: #49F387;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --ground: #F6F5F9;
+    --panel: #FFFFFF;
+    --ink: #16141D;
+    --ink-2: #56526A;
+    --rule: #E3E1EA;
+    --track: #E3E1EA;
+    --accent: #B6207F;
+    --glow: #1C9C4B;
+    color-scheme: light;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0 20px;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN",
+    "Noto Sans JP", "Yu Gothic UI", Meiryo, sans-serif;
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.page {
+  max-width: 38rem;
+  margin: 0 auto;
+  padding-block: 32px 56px;
+}
+
+/* ---- 見出し帯 ---------------------------------------------------- */
+
+.masthead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+}
+
+/*
+  印は、アプリの仕組みそのもの: 上から順に埋まる 3 本のバー。
+  一番上は満タン（達成の色）、次が貯めている途中（メインカラー）、一番下はまだ空。
+*/
+.mark {
+  display: grid;
+  flex: none;
+  gap: 3px;
+  width: 26px;
+}
+
+.mark i {
+  display: block;
+  height: 5px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--fill-color) var(--fill), var(--track) var(--fill));
+}
+
+.mark i:nth-child(1) {
+  --fill: 100%;
+  --fill-color: var(--glow);
+}
+
+.mark i:nth-child(2) {
+  --fill: 55%;
+  --fill-color: var(--accent);
+}
+
+.mark i:nth-child(3) {
+  --fill: 0%;
+  --fill-color: var(--accent);
+}
+
+.nav {
+  display: flex;
+  gap: 20px;
+  font-size: 0.875rem;
+}
+
+.nav a {
+  padding-block: 4px;
+  border-bottom: 2px solid transparent;
+  color: var(--ink-2);
+  text-decoration: none;
+}
+
+.nav a:hover {
+  color: var(--ink);
+}
+
+.nav a[aria-current="page"] {
+  border-bottom-color: var(--accent);
+  color: var(--ink);
+}
+
+/* ---- 本文 ---------------------------------------------------- */
+
+h1 {
+  margin: 36px 0 8px;
+  font-size: 1.75rem;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+  text-wrap: balance;
+}
+
+h2 {
+  margin: 48px 0 12px;
+  font-size: 1.1875rem;
+  line-height: 1.5;
+  text-wrap: balance;
+}
+
+h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+p {
+  margin: 0 0 1em;
+}
+
+ul,
+ol {
+  margin: 0 0 1em;
+  padding-left: 1.4em;
+}
+
+li + li {
+  margin-top: 0.35em;
+}
+
+a {
+  color: var(--accent);
+  text-underline-offset: 3px;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.lede,
+.meta {
+  color: var(--ink-2);
+}
+
+.meta {
+  margin-bottom: 20px;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- 1 ページに 1 つだけ持ち上げる面（連絡先／要約） ---------------- */
+
+.panel {
+  margin-top: 28px;
+  padding: 22px 24px;
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  background: var(--panel);
+}
+
+.panel > :last-child {
+  margin-bottom: 0;
+}
+
+.panel .label {
+  margin: 0 0 4px;
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+/*
+  アドレスは 1 行に収めたい。途中で割れると「.co / m」になり、書き写し間違いを誘う。
+  幅に合わせて文字を縮め、それでも入らない狭さでは HTML 側の <wbr>（@ の直後）で折る。
+*/
+.address {
+  margin: 0 0 16px;
+  font-size: clamp(1rem, 4.6vw, 1.25rem);
+  font-weight: 700;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.address a {
+  text-decoration: none;
+}
+
+.address a:hover {
+  text-decoration: underline;
+}
+
+.panel .quiet {
+  color: var(--ink-2);
+  font-size: 0.9375rem;
+}
+
+.summary-lead {
+  font-size: 1.125rem;
+  font-weight: 700;
+  text-wrap: balance;
+}
+
+/* ---- よくある質問 ---------------------------------------------------- */
+
+.faq section {
+  padding-block: 22px;
+  border-top: 1px solid var(--rule);
+}
+
+.faq section:last-child {
+  border-bottom: 1px solid var(--rule);
+}
+
+.faq section > :last-child {
+  margin-bottom: 0;
+}
+
+/* ---- 表 ---------------------------------------------------- */
+
+.table-wrap {
+  margin: 0 0 1em;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+
+th,
+td {
+  padding: 10px 16px 10px 0;
+  border-bottom: 1px solid var(--rule);
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  color: var(--ink-2);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ---- 末尾 ---------------------------------------------------- */
+
+.footer {
+  margin-top: 56px;
+  padding-top: 16px;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+  line-height: 1.7;
+}
+
+.footer p:last-child {
+  margin-bottom: 0;
+}
