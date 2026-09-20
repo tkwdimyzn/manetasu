@@ -304,3 +304,119 @@ th {
 .footer p:last-child {
   margin-bottom: 0;
 }
+
+
+/*
+  「買いに行く」ページ（buy.html）。
+  アプリの「買いに行く」から開く踏み台で、読むより押す画面。
+
+  **ライトモードを打ち消している。** サポートとプライバシーポリシーは
+  「たまたま開いた web ページ」なので端末の外観に従ってよいが、このページは
+  アプリの続きとして開く。アプリは theme.tsx でダーク 1 つに固定してあるので、
+  ここだけ白くなると、飛んだ瞬間に別のサービスに見える。
+*/
+
+body.buy {
+  --ground: #0E0D13;
+  --panel: #191822;
+  --ink: #EDECF2;
+  --ink-2: #9B98AB;
+  --rule: #2A2836;
+  --track: #2A2836;
+  --accent: #E949AE;
+  --glow: #49F387;
+  color-scheme: dark;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/*
+  商品カードは**枠を持たない**。下の注記（`.buy-note`）と同じ角丸の面にすると、
+  半年貯めたものと法定の注記が同じ重さに見える。面は 1 つだけにする。
+*/
+.buy-card {
+  margin-top: 28px;
+}
+
+/* 「42 日かけて ¥6,000 貯めました」。このページを踏み台から達成の証書に変える 1 行 */
+.buy-eyebrow {
+  margin: 0 0 10px;
+  padding: 6px 12px;
+  display: inline-block;
+  border-radius: 999px;
+  background: rgba(73, 243, 135, 0.12);
+  color: var(--glow);
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+/* このページの主役。店の名前でもボタンでもなく、**買うもの**が一番大きい */
+.buy-name {
+  margin: 0 0 12px;
+  font-size: clamp(1.5rem, 6.4vw, 1.875rem);
+  font-weight: 700;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+/*
+  値段は **--glow（達成の色）を使わない。**
+  あれは「貯まりきった」を表す色で、店の言い値に使うと意味が裏返る。
+*/
+.buy-price {
+  margin: 0 0 4px;
+  color: var(--ink);
+  font-size: 1.375rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.buy-store {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 0.9375rem;
+}
+
+.buy-go {
+  margin: 24px 0 0;
+}
+
+/*
+  文字色は白ではなく墨。アプリの bestInk と同じ判断で、
+  マゼンタ #E949AE の上では 白 3.4:1 に対し 墨 5.6:1。
+*/
+.buy-button {
+  display: block;
+  padding: 16px 20px;
+  border-radius: 12px;
+  background: var(--accent);
+  color: #0B0A10;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+  text-decoration: none;
+}
+
+.buy-button:hover,
+.buy-button:focus-visible {
+  text-decoration: underline;
+}
+
+/* 注記は面を持たず、線 1 本で本文から切り離す */
+.buy-note {
+  margin-top: 36px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-2);
+  font-size: 0.875rem;
+}
+
+.buy-note p:last-child {
+  margin-bottom: 0;
+}

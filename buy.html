@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>買いに行く｜マネタスク</title>
+<meta name="description" content="マネタスクで貯めて買うものの、購入ページへのご案内。">
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="style.css">
+</head>
+<!--
+  class="buy" は飾りではない。アプリはダークに固定されている（theme.tsx）ので、
+  このページだけ端末の外観設定に従うと、アプリから飛んだ瞬間に真っ白になる。
+  style.css の .buy がライトモードの指定を打ち消す。
+-->
+<body class="buy">
+<div class="page">
+  <header class="masthead">
+    <a class="brand" href="./"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span>マネタスク</a>
+    <nav class="nav" aria-label="ページ">
+      <a href="./">サポート</a>
+      <a href="privacy.html">プライバシーポリシー</a>
+    </nav>
+  </header>
+
+  <main>
+    <!--
+      商品カードとリンクは、アプリから渡された値を見てから組み立てる。
+      静的に書いてしまうと、リンクが無いときにも計測タグ（1×1 の画像）が読まれ、
+      「表示されていない広告の表示回数」を送ることになる。
+    -->
+    <div id="card" class="buy-card" hidden>
+      <p class="buy-eyebrow" id="card-earned" hidden></p>
+      <h1 class="buy-name" id="card-name"></h1>
+      <p class="buy-price" id="card-price" hidden></p>
+      <p class="buy-store" id="card-store"></p>
+      <p class="buy-go"><a id="card-link" class="buy-button" href="#" rel="noopener"><span id="card-cta">商品ページを開く</span></a></p>
+    </div>
+
+    <div id="fallback" hidden>
+      <h1>買いに行く</h1>
+      <p class="lede">このページは、マネタスクのアプリから「買いに行く」を押したときに開きます。
+        商品の情報が渡されていないため、表示できるものがありません。
+        アプリに戻ってから、もう一度お試しください。</p>
+    </div>
+
+    <div id="badlink" hidden>
+      <h1>開けませんでした</h1>
+      <p class="lede">安全に開けると確認できたリンクだけを表示しています。
+        お手数ですが、アプリに戻ってからもう一度お試しください。</p>
+    </div>
+
+    <noscript>
+      <h1>買いに行く</h1>
+      <p class="lede">このページは JavaScript を使って商品のリンクを組み立てています。
+        Safari の設定で JavaScript を有効にしてから開いてください。</p>
+    </noscript>
+
+    <div class="buy-note">
+      <p>このページは広告（アフィリエイトリンク）を含みます。上のボタンから商品をご購入いただくと、
+        運営者に紹介料が入ることがあります。<strong>お支払いいただく金額は変わりません。</strong></p>
+      <p>価格や在庫は、アプリで検索した時点のものです。最新の価格は、リンク先の販売ページでご確認ください。</p>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p><a href="https://developer.yahoo.co.jp/sitemap/">Webサービス by Yahoo! JAPAN</a></p>
+    <p>このページは GitHub Pages で公開しています。ページを開いたときの記録（IP アドレスなど）の扱いは、
+      <a href="https://docs.github.com/ja/site-policy/privacy-policies/github-general-privacy-statement">GitHub のプライバシーステートメント</a>に従います。</p>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /*
+    アプリから渡された成果リンクを、そのまま表示するだけのページ。
+    ここで URL を組み立て直してはいけない（広告リンクの改変は 3 社とも禁止）。
+    設計の理由と引用は save_app/buy-page.md にある。
+  */
+
+  // 開いてよいホスト。ここに無いものは表示しない（オープンリダイレクタにしないため）
+  var ALLOWED = {
+    'ck.jp.ap.valuecommerce.com': {
+      store: 'Yahoo!ショッピング',
+      cta: 'Yahoo!ショッピングで見る',
+      // バリューコマースの表示回数カウント用タグ。MyLink で発行されたものと同じ値。
+      // 「リダイレクトさせたいページのリンクがある場所に ad タグを」（商品API 第5章 FAQ）
+      ad: 'https://ad.jp.ap.valuecommerce.com/servlet/gifbanner?sid=3781888&pid=892707723'
+    }
+  };
+
+  var params = new URLSearchParams(window.location.search);
+  var raw = params.get('u') || '';
+  var name = (params.get('n') || '').slice(0, 200).trim();
+  var price = (params.get('p') || '').replace(/[^0-9]/g, '').slice(0, 12);
+  // 「42 日かけて ¥6,000 貯めました」を出すための 2 つ。無ければ何も出さない。
+  var saved = (params.get('v') || '').replace(/[^0-9]/g, '').slice(0, 12);
+  var days = (params.get('d') || '').replace(/[^0-9]/g, '').slice(0, 5);
+
+  var card = document.getElementById('card');
+  var fallback = document.getElementById('fallback');
+  var badlink = document.getElementById('badlink');
+
+  var yen = function (n) { return '¥' + Number(n).toLocaleString('ja-JP'); };
+
+  if (!raw) {
+    fallback.hidden = false;
+    return;
+  }
+
+  var rule = null;
+  try {
+    var parsed = new URL(raw);
+    if (parsed.protocol === 'https:' && Object.prototype.hasOwnProperty.call(ALLOWED, parsed.hostname)) {
+      rule = ALLOWED[parsed.hostname];
+    }
+  } catch (e) {
+    rule = null;
+  }
+
+  if (!rule) {
+    badlink.hidden = false;
+    return;
+  }
+
+  document.getElementById('card-store').textContent = rule.store;
+  document.getElementById('card-name').textContent = name || 'この商品';
+  document.getElementById('card-cta').textContent = rule.cta;
+
+  if (price) {
+    var el = document.getElementById('card-price');
+    el.textContent = yen(price);
+    el.hidden = false;
+  }
+
+  // ここが「踏み台」と「達成の証書」を分ける 1 行。貯めた実績が渡っていれば先頭に出す。
+  if (saved) {
+    var earned = document.getElementById('card-earned');
+    earned.textContent = days
+      ? days + ' 日かけて ' + yen(saved) + ' 貯めました'
+      : yen(saved) + ' 貯めました';
+    earned.hidden = false;
+  }
+
+  var link = document.getElementById('card-link');
+  // 検証は URL() で行い、href には受け取った文字列をそのまま入れる（1 文字も変えない）
+  link.setAttribute('href', raw);
+
+  // 表示されるリンク 1 つにつき、計測タグ 1 つ（1 対 1）
+  var pixel = document.createElement('img');
+  pixel.setAttribute('src', rule.ad);
+  pixel.setAttribute('width', '1');
+  pixel.setAttribute('height', '1');
+  pixel.setAttribute('border', '0');
+  pixel.setAttribute('alt', '');
+  link.appendChild(pixel);
+
+  card.hidden = false;
+})();
+</script>
+</body>
+</html>
