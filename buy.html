@@ -91,7 +91,11 @@
     }
   };
 
-  var params = new URLSearchParams(window.location.search);
+  // **クエリ（?）ではなくフラグメント（#）から読む。**
+  // フラグメントはサーバーに送られないので、目標の名前や貯めた額が
+  // GitHub Pages のアクセスログに残らない。アプリ側は core/url.ts の
+  // buyDestination が # で組み立てている ── **片方だけ直すと証書が出なくなる。**
+  var params = new URLSearchParams(window.location.hash.slice(1));
   var raw = params.get('u') || '';
   var name = (params.get('n') || '').slice(0, 200).trim();
   var price = (params.get('p') || '').replace(/[^0-9]/g, '').slice(0, 12);
