@@ -26,8 +26,7 @@
   <main>
     <!--
       商品カードとリンクは、アプリから渡された値を見てから組み立てる。
-      静的に書いてしまうと、リンクが無いときにも計測タグ（1×1 の画像）が読まれ、
-      「表示されていない広告の表示回数」を送ることになる。
+      2026-09-28 から、ここには広告を置かない（下の script の注記）。
     -->
     <div id="card" class="buy-card" hidden>
       <p class="buy-eyebrow" id="card-earned" hidden></p>
@@ -57,8 +56,6 @@
     </noscript>
 
     <div class="buy-note">
-      <p>このページは広告（アフィリエイトリンク）を含みます。上のボタンから商品をご購入いただくと、
-        運営者に紹介料が入ることがあります。<strong>お支払いいただく金額は変わりません。</strong></p>
       <p>価格や在庫は、アプリで検索した時点のものです。最新の価格は、リンク先の販売ページでご確認ください。</p>
     </div>
   </main>
@@ -75,21 +72,37 @@
   'use strict';
 
   /*
-    アプリから渡された成果リンクを、そのまま表示するだけのページ。
-    ここで URL を組み立て直してはいけない（広告リンクの改変は 3 社とも禁止）。
-    設計の理由と引用は save_app/buy-page.md にある。
+    アプリの「買いに行く」から開くページ。設計の理由と引用は save_app/buy-page.md にある。
+
+    **2026-09-28 から、成果リンクを使わず、素の商品ページへつなぐ。計測タグも読まない。**
+    アプリ（1.1.0〜）が渡してくるのは、既存サイト（sid 3781888）の広告コードで作った成果リンク。
+    バリューコマースの回答は「既存サイトで作成した広告コードをアプリ含め別サイトに掲載することが
+    ないように」（save_app/vc-rules.md 8）。アプリの媒体（3782665）は審査中で、通ったら
+    アプリが自分で成果リンクを開く（このページは挟まない。vc-rules.md 11）。
+    **このページを直せば、出ている全部の版に一度に効く**（アプリの更新も審査も要らない）。
+    紹介料は入らなくなるが、宣伝で人が増える前に止める。
+
+    成果リンクを組み立て直してはいけない（広告リンクの改変は 3 社とも禁止）。
+    ここでは中の vc_url（素の商品ページ）を取り出すだけで、広告としては使わない。
   */
 
   // 開いてよいホスト。ここに無いものは表示しない（オープンリダイレクタにしないため）
   var ALLOWED = {
     'ck.jp.ap.valuecommerce.com': {
       store: 'Yahoo!ショッピング',
-      cta: 'Yahoo!ショッピングで見る',
-      // バリューコマースの表示回数カウント用タグ。MyLink で発行されたものと同じ値。
-      // 「リダイレクトさせたいページのリンクがある場所に ad タグを」（商品API 第5章 FAQ）
-      ad: 'https://ad.jp.ap.valuecommerce.com/servlet/gifbanner?sid=3781888&pid=892707723'
+      cta: 'Yahoo!ショッピングで見る'
     }
   };
+
+  // 成果リンクの中の行き先（vc_url）として開いてよいホスト（vc-rules.md 2 の原文）。
+  // vc_url には何でも入れられるので、ここを緩めると踏み台になる
+  var DEST = [
+    'shopping.yahoo.co.jp',
+    'topics.shopping.yahoo.co.jp',
+    'store.shopping.yahoo.co.jp',
+    'search.shopping.yahoo.co.jp',
+    'paypaymall.yahoo.co.jp'
+  ];
 
   // **クエリ（?）ではなくフラグメント（#）から読む。**
   // フラグメントはサーバーに送られないので、目標の名前や貯めた額が
@@ -115,16 +128,23 @@
   }
 
   var rule = null;
+  var dest = null;
   try {
     var parsed = new URL(raw);
     if (parsed.protocol === 'https:' && Object.prototype.hasOwnProperty.call(ALLOWED, parsed.hostname)) {
-      rule = ALLOWED[parsed.hostname];
+      var inner = parsed.searchParams.get('vc_url') || '';
+      var target = new URL(inner);
+      if (target.protocol === 'https:' && !target.username && !target.password && DEST.indexOf(target.hostname) >= 0) {
+        rule = ALLOWED[parsed.hostname];
+        dest = inner;
+      }
     }
   } catch (e) {
     rule = null;
+    dest = null;
   }
 
-  if (!rule) {
+  if (!rule || !dest) {
     badlink.hidden = false;
     return;
   }
@@ -149,17 +169,8 @@
   }
 
   var link = document.getElementById('card-link');
-  // 検証は URL() で行い、href には受け取った文字列をそのまま入れる（1 文字も変えない）
-  link.setAttribute('href', raw);
-
-  // 表示されるリンク 1 つにつき、計測タグ 1 つ（1 対 1）
-  var pixel = document.createElement('img');
-  pixel.setAttribute('src', rule.ad);
-  pixel.setAttribute('width', '1');
-  pixel.setAttribute('height', '1');
-  pixel.setAttribute('border', '0');
-  pixel.setAttribute('alt', '');
-  link.appendChild(pixel);
+  // 素の商品ページ。広告ではないので計測タグは付けない（上の注記）
+  link.setAttribute('href', dest);
 
   card.hidden = false;
 })();
